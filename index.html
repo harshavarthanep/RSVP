@@ -2,479 +2,732 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Speech & Reading Coach</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Speech & Reading Coach Pro</title>
     <style>
         :root {
-            --bg-color: #121212;
-            --surface-color: #1e1e1e;
-            --primary-color: #bb86fc;
-            --text-color: #e0e0e0;
-            --success-color: #03dac6;
-            --error-color: #cf6679;
-            --dim-text: #757575;
+            /* Base Colors */
+            --bg-color: #0f0f13;
+            --surface-color: #1a1a20;
+            --surface-hover: #25252e;
+            --text-main: #f0f0f0;
+            --text-dim: #888890;
+            
+            /* Theme Variables (Default: Purple) */
+            --primary: #bb86fc;
+            --primary-variant: #9955e8;
+            --on-primary: #000000;
+            
+            /* Status Colors */
+            --success: #00e676;
+            --error: #ff5252;
+            --warning: #ffab40;
+            
+            /* Dimensions */
+            --header-height: 60px;
+            --radius: 12px;
         }
 
+        [data-theme="blue"] { --primary: #448aff; --primary-variant: #2962ff; }
+        [data-theme="green"] { --primary: #69f0ae; --primary-variant: #00c853; }
+        [data-theme="orange"] { --primary: #ffab40; --primary-variant: #ff6d00; }
+        [data-theme="pink"] { --primary: #ff4081; --primary-variant: #c51162; }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
         body {
             background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text-main);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             margin: 0;
-            padding: 0;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            height: 100vh;
             overflow: hidden;
         }
 
         /* --- Header --- */
         header {
-            background-color: var(--surface-color);
-            padding: 1rem 2rem;
+            height: var(--header-height);
+            background: rgba(26, 26, 32, 0.95);
+            backdrop-filter: blur(10px);
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            z-index: 10;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            z-index: 100;
         }
 
-        h1 { margin: 0; font-size: 1.2rem; font-weight: 500; letter-spacing: 1px; }
+        .logo {
+            font-weight: 700;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        .icon-btn:hover { background: rgba(255,255,255,0.1); }
 
         /* --- Main Layout --- */
         main {
-            display: flex;
             flex: 1;
-            overflow: hidden;
             position: relative;
+            display: flex;
+            overflow: hidden;
         }
 
-        /* --- Input Section --- */
-        #input-section {
-            flex: 1;
+        /* --- Editor View --- */
+        #editor-view {
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
-            padding: 2rem;
-            transition: transform 0.3s ease;
+            padding: 1rem;
+            transition: transform 0.4s cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 0.8rem;
+            padding-bottom: 1rem;
+            overflow-x: auto;
         }
 
         textarea {
-            width: 100%;
-            height: 100%;
-            background-color: var(--surface-color);
-            border: 1px solid #333;
-            color: var(--text-color);
+            flex: 1;
+            background: var(--surface-color);
+            border: 2px solid transparent;
+            color: var(--text-main);
+            border-radius: var(--radius);
             padding: 1.5rem;
             font-size: 1.1rem;
             line-height: 1.6;
             resize: none;
-            border-radius: 8px;
             outline: none;
+            transition: border-color 0.2s;
         }
+        textarea:focus { border-color: var(--primary); }
+        textarea::placeholder { color: var(--text-dim); }
 
-        textarea:focus { border-color: var(--primary-color); }
-
-        /* --- Teleprompter / Coach View --- */
-        #coach-view {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--bg-color);
+        /* --- Buttons --- */
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: var(--radius);
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            transition: transform 0.1s, filter 0.2s;
+            background: var(--surface-color);
+            color: var(--text-main);
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-primary { background: var(--primary); color: var(--on-primary); }
+        .btn-primary:hover { filter: brightness(1.1); }
+        .btn-outline { border: 1px solid rgba(255,255,255,0.2); }
+        
+        /* --- Modes (Coach & RSVP) --- */
+        .mode-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--bg-color);
+            z-index: 50;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            padding: 2rem 10%; /* Wide margins for readability */
-            box-sizing: border-box;
             transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 20;
+            transition: transform 0.4s cubic-bezier(0.2, 0, 0, 1);
         }
+        .mode-overlay.active { transform: translateY(0); }
 
-        #coach-view.active { transform: translateY(0); }
-
-        #text-display {
-            width: 100%;
+        /* Coach Mode Styles */
+        #coach-content {
             flex: 1;
+            padding: 2rem;
             overflow-y: auto;
-            font-size: 2.5rem;
-            line-height: 1.6;
-            text-align: left;
-            padding-right: 1rem;
-            scroll-behavior: smooth;
+            font-size: 2rem;
+            line-height: 1.8;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
         }
 
-        /* Word Styling */
         .word {
             display: inline-block;
-            margin-right: 0.25em;
-            padding: 2px 4px;
+            margin-right: 0.3em;
+            padding: 0.1em 0.2em;
             border-radius: 4px;
-            transition: color 0.2s, background 0.2s;
-            color: var(--dim-text);
+            color: var(--text-dim);
+            transition: all 0.2s ease;
+        }
+        .word.active { color: var(--text-main); border-bottom: 3px solid var(--primary); transform: scale(1.05); }
+        .word.correct { color: var(--success); opacity: 1; }
+        .word.missed { color: var(--error); text-decoration: line-through; opacity: 0.5; }
+
+        /* RSVP Mode Styles */
+        #rsvp-display {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            font-weight: 800;
+            text-align: center;
+            padding: 1rem;
+            color: var(--primary);
+        }
+        .rsvp-progress {
+            height: 4px;
+            background: var(--surface-color);
+            width: 100%;
+            margin-top: auto;
+        }
+        .rsvp-bar {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.1s linear;
         }
 
-        .word.active { color: #fff; text-decoration: underline; text-decoration-color: var(--primary-color); }
-        .word.correct { color: var(--bg-color); background-color: var(--success-color); }
-        .word.skipped { color: var(--error-color); opacity: 0.6; text-decoration: line-through; }
-
-        /* --- RSVP Overlay --- */
-        #rsvp-overlay {
+        /* --- Modals & Settings --- */
+        .modal-backdrop {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(18, 18, 18, 0.98);
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 200;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
             align-items: center;
-            z-index: 30;
+            justify-content: center;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s;
         }
-
-        #rsvp-overlay.active { opacity: 1; pointer-events: all; }
-
-        #rsvp-word {
-            font-size: 5rem;
-            font-weight: bold;
-            color: var(--primary-color);
-        }
-
-        /* --- Controls & Stats --- */
-        .controls-bar {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            padding: 1rem 0;
-        }
-
-        button {
-            background-color: var(--surface-color);
-            color: var(--primary-color);
-            border: 1px solid var(--primary-color);
-            padding: 0.6rem 1.2rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            transition: all 0.2s;
-        }
-
-        button:hover { background-color: var(--primary-color); color: var(--bg-color); }
-        button.primary { background-color: var(--primary-color); color: var(--bg-color); }
-
-        .slider-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: var(--dim-text);
-            font-size: 0.9rem;
-        }
-
-        input[type="range"] { accent-color: var(--primary-color); }
-
-        /* Stats Dashboard */
-        #stats-panel {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-            width: 100%;
-            margin-top: 1rem;
-            border-top: 1px solid #333;
-            padding-top: 1rem;
-            display: none; /* Hidden by default */
-        }
-
-        .stat-card {
+        .modal-backdrop.open { opacity: 1; pointer-events: all; }
+        
+        .modal {
             background: var(--surface-color);
+            padding: 2rem;
+            border-radius: var(--radius);
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal h2 { margin-top: 0; color: var(--primary); }
+        
+        .setting-group { margin-bottom: 1.5rem; }
+        .setting-label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+        
+        .theme-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+        .theme-btn {
+            height: 40px;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+        .theme-btn.selected { border-color: var(--text-main); }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        .stat-box {
+            background: rgba(255,255,255,0.05);
             padding: 1rem;
             border-radius: 8px;
             text-align: center;
         }
+        .stat-num { display: block; font-size: 2rem; font-weight: 800; color: var(--primary); }
+        .stat-lbl { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
 
-        .stat-value { font-size: 1.5rem; font-weight: bold; color: var(--primary-color); display: block; }
-        .stat-label { font-size: 0.8rem; color: var(--dim-text); text-transform: uppercase; }
+        /* Library List */
+        .lib-item {
+            padding: 1rem;
+            background: rgba(255,255,255,0.03);
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .lib-item:hover { background: rgba(255,255,255,0.08); }
+        .lib-title { font-weight: bold; display: block; }
+        .lib-desc { font-size: 0.85rem; color: var(--text-dim); }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg-color); }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        /* Range Slider */
+        input[type=range] {
+            width: 100%;
+            accent-color: var(--primary);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 600px) {
+            #coach-content { font-size: 1.5rem; padding: 1rem; }
+            #rsvp-display { font-size: 2.5rem; }
+            .toolbar { flex-wrap: wrap; }
+            .btn { flex: 1; justify-content: center; white-space: nowrap; }
+        }
 
     </style>
 </head>
 <body>
 
+    <div id="settings-modal" class="modal-backdrop">
+        <div class="modal">
+            <h2>Settings</h2>
+            
+            <div class="setting-group">
+                <span class="setting-label">Theme Color</span>
+                <div class="theme-grid">
+                    <button class="theme-btn" style="background:#bb86fc" onclick="setTheme('purple')"></button>
+                    <button class="theme-btn" style="background:#448aff" onclick="setTheme('blue')"></button>
+                    <button class="theme-btn" style="background:#69f0ae" onclick="setTheme('green')"></button>
+                    <button class="theme-btn" style="background:#ffab40" onclick="setTheme('orange')"></button>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <span class="setting-label">Data Management</span>
+                <button class="btn btn-outline" style="width:100%" onclick="resetData()">Reset All History</button>
+            </div>
+            
+            <button class="btn" style="width:100%" onclick="closeModal('settings-modal')">Close</button>
+        </div>
+    </div>
+
+    <div id="library-modal" class="modal-backdrop">
+        <div class="modal">
+            <h2>Script Library</h2>
+            <p>Select a text to practice with:</p>
+            <div id="library-list">
+                </div>
+            <button class="btn" style="width:100%; margin-top:1rem;" onclick="closeModal('library-modal')">Cancel</button>
+        </div>
+    </div>
+
+    <div id="results-modal" class="modal-backdrop">
+        <div class="modal" style="text-align: center;">
+            <h2 id="result-title">Session Complete!</h2>
+            <p id="result-msg">Great job improving your skills.</p>
+            
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <span class="stat-num" id="res-wpm">0</span>
+                    <span class="stat-lbl">WPM</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-num" id="res-acc">0%</span>
+                    <span class="stat-lbl">Accuracy</span>
+                </div>
+            </div>
+
+            <div style="display:grid; gap:0.5rem;">
+                <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="shareResult()">
+                    🔗 Share Result
+                </button>
+                <button class="btn btn-outline" style="width:100%; justify-content:center;" onclick="closeModal('results-modal')">
+                    Back to Editor
+                </button>
+            </div>
+        </div>
+    </div>
+
     <header>
-        <h1>Speech & Reading Coach</h1>
-        <div class="slider-container">
-            <span>Speed:</span>
-            <input type="range" id="wpm-slider" min="100" max="800" value="300" step="10">
-            <span id="wpm-display">300 WPM</span>
+        <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+            SpeechCoach Pro
+        </div>
+        <div class="header-actions">
+            <button class="icon-btn" onclick="openSettings()">⚙️</button>
         </div>
     </header>
 
     <main>
-        <section id="input-section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h2 style="margin: 0; font-size: 1rem; color: var(--dim-text);">SCRIPT EDITOR</h2>
-                <div class="controls-bar" style="padding:0;">
-                    <button onclick="startCoachMode()" class="primary">🎤 Speech Mode</button>
-                    <button onclick="startRSVP()">⚡ Speed Read</button>
-                </div>
+        <section id="editor-view">
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="initSpeechMode()">
+                    🎤 Speech Mode
+                </button>
+                <button class="btn btn-outline" onclick="initRSVPMode()">
+                    ⚡ Speed Read
+                </button>
+                <button class="btn btn-outline" onclick="openLibrary()">
+                    📚 Library
+                </button>
             </div>
-            <textarea id="script-input" placeholder="Paste your speech or text here...">
-Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal.
-
-Now we are engaged in a great civil war, testing whether that nation, or any nation so conceived and so dedicated, can long endure.</textarea>
+            <textarea id="input-text" placeholder="Type here, paste a script, or choose from the Library..."></textarea>
+            <div style="margin-top:0.5rem; font-size:0.8rem; color:var(--text-dim); text-align:right;">
+                Pro Tip: Use shorter paragraphs for better speech detection.
+            </div>
         </section>
 
-        <section id="coach-view">
-            <div class="controls-bar" style="width: 100%; justify-content: space-between;">
-                <button onclick="stopCoachMode()">← Back to Editor</button>
-                <div id="status-indicator" style="color: var(--primary-color);">Listening...</div>
-                <button onclick="stopCoachMode()" class="primary">Finish Session</button>
-            </div>
+        <section id="coach-mode" class="mode-overlay">
+            <header style="background:var(--bg-color);">
+                <button class="btn btn-outline" onclick="exitMode('coach')">← Back</button>
+                <div id="speech-status" style="color:var(--primary); font-weight:bold;">Listening...</div>
+                <button class="btn btn-primary" onclick="finishSpeechSession()">Finish</button>
+            </header>
+            <div id="coach-content"></div>
+        </section>
 
-            <div id="text-display"></div>
-
-            <div id="stats-panel">
-                <div class="stat-card">
-                    <span class="stat-value" id="stat-wpm">0</span>
-                    <span class="stat-label">Words Per Minute</span>
+        <section id="rsvp-mode" class="mode-overlay">
+            <header style="background:var(--bg-color);">
+                <button class="btn btn-outline" onclick="exitMode('rsvp')">← Back</button>
+                <div style="display:flex; align-items:center; gap:10px; width:200px;">
+                    <span style="font-size:0.8rem;">Speed:</span>
+                    <input type="range" id="wpm-slider" min="100" max="1000" step="50" value="300" oninput="updateWPM(this.value)">
+                    <span id="wpm-val" style="font-size:0.8rem; min-width:60px;">300</span>
                 </div>
-                <div class="stat-card">
-                    <span class="stat-value" id="stat-accuracy">0%</span>
-                    <span class="stat-label">Accuracy</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-value" id="stat-time">0s</span>
-                    <span class="stat-label">Time Taken</span>
-                </div>
+            </header>
+            <div id="rsvp-display">Ready</div>
+            <div class="rsvp-progress"><div class="rsvp-bar" id="rsvp-bar"></div></div>
+            <div style="padding: 2rem; display:flex; justify-content:center; gap:1rem;">
+                <button id="rsvp-toggle" class="btn btn-primary" onclick="toggleRSVP()">Start</button>
             </div>
         </section>
     </main>
 
-    <div id="rsvp-overlay">
-        <div id="rsvp-word">Ready</div>
-        <div class="controls-bar">
-            <button onclick="stopRSVP()">Stop Reading</button>
-        </div>
-    </div>
-
     <script>
-        // --- State ---
-        const els = {
-            input: document.getElementById('script-input'),
-            coachView: document.getElementById('coach-view'),
-            textDisplay: document.getElementById('text-display'),
-            rsvpOverlay: document.getElementById('rsvp-overlay'),
-            rsvpWord: document.getElementById('rsvp-word'),
-            wpmSlider: document.getElementById('wpm-slider'),
-            wpmDisplay: document.getElementById('wpm-display'),
-            status: document.getElementById('status-indicator'),
-            stats: document.getElementById('stats-panel'),
-            statWpm: document.getElementById('stat-wpm'),
-            statAcc: document.getElementById('stat-accuracy'),
-            statTime: document.getElementById('stat-time')
+        // --- DATA & CONFIG ---
+        const libraryTexts = [
+            { title: "Famous: Gettysburg Address", desc: "Abraham Lincoln's historic speech.", text: "Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal. Now we are engaged in a great civil war, testing whether that nation, or any nation so conceived and so dedicated, can long endure." },
+            { title: "Fun: Tongue Twister", desc: "A classic pronunciation challenge.", text: "Peter Piper picked a peck of pickled peppers. A peck of pickled peppers Peter Piper picked. If Peter Piper picked a peck of pickled peppers, where's the peck of pickled peppers Peter Piper picked?" },
+            { title: "Motivation: Don't Quit", desc: "Inspirational verses.", text: "When things go wrong as they sometimes will, when the road you're trudging seems all uphill, when the funds are low and the debts are high, and you want to smile but you have to sigh, when care is pressing you down a bit, rest if you must but don't you quit." },
+            { title: "Practice: The Solar System", desc: "Scientific reading passage.", text: "The Solar System is the gravitationally bound system of the Sun and the objects that orbit it, either directly or indirectly. Of the objects that orbit the Sun directly, the largest are the eight planets, with the remainder being smaller objects, the dwarf planets and small Solar System bodies." }
+        ];
+
+        let state = {
+            theme: localStorage.getItem('theme') || 'purple',
+            history: JSON.parse(localStorage.getItem('history') || '[]'),
+            wpm: 300
         };
 
-        let words = [];
-        let cleanWords = []; // Lowercase, stripped punctuation for matching
-        let currentIndex = 0;
-        let rsvpInterval;
-        let recognition;
-        let isListening = false;
-        let startTime;
-        let correctWordsCount = 0;
+        // --- DOM ELEMENTS ---
+        const el = {
+            input: document.getElementById('input-text'),
+            coachMode: document.getElementById('coach-mode'),
+            coachContent: document.getElementById('coach-content'),
+            rsvpMode: document.getElementById('rsvp-mode'),
+            rsvpDisplay: document.getElementById('rsvp-display'),
+            rsvpBar: document.getElementById('rsvp-bar'),
+            rsvpToggle: document.getElementById('rsvp-toggle'),
+            resModal: document.getElementById('results-modal'),
+            resWpm: document.getElementById('res-wpm'),
+            resAcc: document.getElementById('res-acc'),
+            resMsg: document.getElementById('result-msg')
+        };
 
-        // --- Event Listeners ---
-        els.wpmSlider.addEventListener('input', (e) => {
-            els.wpmDisplay.innerText = `${e.target.value} WPM`;
-        });
+        // --- INIT ---
+        setTheme(state.theme);
 
-        // --- Helper Functions ---
-        function prepareText() {
-            const text = els.input.value.trim();
-            if (!text) return false;
+        // --- CORE FUNCTIONS ---
+
+        function setTheme(color) {
+            document.body.setAttribute('data-theme', color);
+            localStorage.setItem('theme', color);
             
-            // Split by spaces/newlines but keep structure roughly
-            words = text.split(/\s+/);
-            // Create a clean version for logic matching
-            cleanWords = words.map(w => w.toLowerCase().replace(/[^\w\s]|_/g, ""));
+            // Update UI buttons
+            document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('selected'));
+            // Find button roughly matching color (simplification)
+            state.theme = color;
+        }
+
+        function openLibrary() {
+            const list = document.getElementById('library-list');
+            list.innerHTML = libraryTexts.map(t => `
+                <div class="lib-item" onclick="loadText('${t.text.replace(/'/g, "\\'")}')">
+                    <span class="lib-title">${t.title}</span>
+                    <span class="lib-desc">${t.desc}</span>
+                </div>
+            `).join('');
+            openModal('library-modal');
+        }
+
+        function loadText(text) {
+            el.input.value = text;
+            closeModal('library-modal');
+        }
+
+        function checkInput() {
+            if(!el.input.value.trim()) {
+                openLibrary();
+                return false;
+            }
             return true;
         }
 
-        function formatTime(ms) {
-            const s = Math.floor(ms / 1000);
-            const m = Math.floor(s / 60);
-            const rs = s % 60;
-            return `${m}:${rs.toString().padStart(2, '0')}`;
-        }
+        // --- SPEECH MODE ENGINE ---
+        let recognition;
+        let speechWords = [];
+        let speechIndex = 0;
+        let speechCorrect = 0;
+        let speechStartTime;
+        let isListening = false;
 
-        // --- RSVP Mode ---
-        function startRSVP() {
-            if (!prepareText()) return alert("Please enter some text!");
+        function initSpeechMode() {
+            if(!checkInput()) return;
             
-            els.rsvpOverlay.classList.add('active');
-            let idx = 0;
-            const wpm = parseInt(els.wpmSlider.value);
-            const intervalMs = 60000 / wpm;
-
-            els.rsvpWord.innerText = "3...";
-            setTimeout(() => els.rsvpWord.innerText = "2...", 600);
-            setTimeout(() => els.rsvpWord.innerText = "1...", 1200);
-            
-            setTimeout(() => {
-                rsvpInterval = setInterval(() => {
-                    if (idx >= words.length) {
-                        stopRSVP();
-                        return;
-                    }
-                    els.rsvpWord.innerText = words[idx];
-                    idx++;
-                }, intervalMs);
-            }, 1800);
-        }
-
-        function stopRSVP() {
-            clearInterval(rsvpInterval);
-            els.rsvpOverlay.classList.remove('active');
-        }
-
-        // --- Speech / Fluency Mode ---
-        function startCoachMode() {
-            if (!prepareText()) return alert("Please enter text first.");
-            
-            // Check API Support
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                return alert("Your browser does not support the Web Speech API. Please use Chrome or Edge.");
+            // Browser Support Check
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if(!SpeechRec) {
+                alert("Speech API not supported in this browser. Please use Chrome.");
+                return;
             }
 
-            // Reset UI
-            els.stats.style.display = 'none';
-            els.coachView.classList.add('active');
-            els.textDisplay.innerHTML = words.map((w, i) => `<span id="w-${i}" class="word">${w}</span>`).join(' ');
+            // Setup Data
+            const text = el.input.value;
+            speechWords = text.trim().split(/\s+/);
+            el.coachContent.innerHTML = speechWords.map((w,i) => `<span id="w-${i}" class="word">${w}</span>`).join('');
             
-            currentIndex = 0;
-            correctWordsCount = 0;
-            isListening = true;
-            startTime = Date.now();
+            speechIndex = 0;
+            speechCorrect = 0;
             
-            // Highlight first word
-            document.getElementById(`w-0`).classList.add('active');
+            el.coachMode.classList.add('active');
+            highlightWord(0);
 
-            // Setup Speech API
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
+            // Setup API
+            recognition = new SpeechRec();
             recognition.continuous = true;
             recognition.interimResults = true;
             recognition.lang = 'en-US';
 
-            recognition.onresult = handleSpeechResult;
-            recognition.onend = () => {
-                if (isListening) recognition.start(); // Restart if stopped unexpectedly
+            recognition.onstart = () => {
+                isListening = true;
+                speechStartTime = Date.now();
+                document.getElementById('speech-status').innerText = "Listening... (Speak naturally)";
             };
-            
+
+            recognition.onend = () => {
+                if(isListening) recognition.start(); // Auto-restart if silence stops it
+            };
+
+            recognition.onresult = processSpeech;
             recognition.start();
         }
 
-        function handleSpeechResult(event) {
-            if (!isListening) return;
+        function processSpeech(event) {
+            // Get last result
+            const results = event.results;
+            const transcript = results[results.length - 1][0].transcript.toLowerCase().trim();
+            const spokenTokens = transcript.split(' ');
+            const lastWord = spokenTokens[spokenTokens.length - 1]; // Use last word for matching
 
-            // Get the latest transcript (only the new part)
-            let transcript = '';
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) {
-                    transcript += event.results[i][0].transcript;
+            // Fuzzy logic: Check if last spoken word matches current target or next 2 targets
+            // This handles if user speaks faster than API updates or skips a word
+            const targetClean = clean(speechWords[speechIndex]);
+            
+            // Attempt Match
+            let matchFound = false;
+            let jumpIndex = 0;
+
+            for(let i=0; i<3; i++) { // Look ahead 3 words
+                if(speechIndex + i >= speechWords.length) break;
+                
+                const nextTarget = clean(speechWords[speechIndex + i]);
+                if(spokenTokens.some(t => t.includes(nextTarget) || nextTarget.includes(t))) {
+                    matchFound = true;
+                    jumpIndex = i;
+                    break;
+                }
+            }
+
+            if(matchFound) {
+                // Mark skipped
+                for(let k=0; k<jumpIndex; k++) {
+                    markWord(speechIndex + k, 'missed');
+                }
+                // Mark correct
+                markWord(speechIndex + jumpIndex, 'correct');
+                speechCorrect++;
+                
+                // Move pointer
+                speechIndex += (jumpIndex + 1);
+                
+                if(speechIndex < speechWords.length) {
+                    highlightWord(speechIndex);
                 } else {
-                    transcript += event.results[i][0].transcript;
+                    finishSpeechSession();
                 }
             }
-
-            // Simple "Fuzzy" Matching Logic
-            const spokenWords = transcript.toLowerCase().trim().split(/\s+/);
-            
-            // Look at the last few spoken words to see if they match upcoming words in script
-            const lookAheadWindow = 5; 
-            const recentSpoken = spokenWords.slice(-5); // Only check most recent input
-
-            recentSpoken.forEach(spoken => {
-                // Check if this spoken word matches the CURRENT target or upcoming 5 words
-                for (let offset = 0; offset < lookAheadWindow; offset++) {
-                    let targetIdx = currentIndex + offset;
-                    if (targetIdx >= cleanWords.length) break;
-
-                    if (cleanWords[targetIdx] === spoken) {
-                        // MATCH FOUND
-                        // 1. Mark skipped words (if any)
-                        for (let k = currentIndex; k < targetIdx; k++) {
-                            document.getElementById(`w-${k}`).className = "word skipped";
-                        }
-                        
-                        // 2. Mark correct word
-                        const el = document.getElementById(`w-${targetIdx}`);
-                        el.className = "word correct";
-                        
-                        // 3. Auto Scroll
-                        el.scrollIntoView({ behavior: "smooth", block: "center" });
-
-                        // 4. Update Index
-                        currentIndex = targetIdx + 1;
-                        correctWordsCount++;
-
-                        // 5. Highlight next active word
-                        if (currentIndex < words.length) {
-                            document.getElementById(`w-${currentIndex}`).classList.add('active');
-                        } else {
-                            stopCoachMode(); // Finished
-                        }
-                        return; // Break inner loop once matched
-                    }
-                }
-            });
         }
 
-        function stopCoachMode() {
+        function clean(str) { return str.toLowerCase().replace(/[^\w]/g, ''); }
+
+        function markWord(idx, type) {
+            const dom = document.getElementById(`w-${idx}`);
+            if(dom) dom.className = `word ${type}`;
+        }
+
+        function highlightWord(idx) {
+            // Remove old active
+            document.querySelectorAll('.word.active').forEach(e => e.classList.remove('active'));
+            const dom = document.getElementById(`w-${idx}`);
+            if(dom) {
+                dom.classList.add('active');
+                dom.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function finishSpeechSession() {
             isListening = false;
-            if (recognition) recognition.stop();
-            els.status.innerText = "Session Complete";
+            if(recognition) recognition.stop();
+            el.coachMode.classList.remove('active');
 
-            // Calculate Stats
-            const endTime = Date.now();
-            const timeTakenSec = (endTime - startTime) / 1000;
-            const timeTakenMin = timeTakenSec / 60;
-            
-            // WPM: (Total Words / Minutes)
-            const wpm = Math.round(currentIndex / (timeTakenMin || 1)); // prevent div by 0
-            
-            // Accuracy: (Correct / Total Processed) * 100
-            const accuracy = currentIndex > 0 ? Math.round((correctWordsCount / currentIndex) * 100) : 0;
+            const timeSec = (Date.now() - speechStartTime) / 1000;
+            const wpm = Math.round((speechCorrect / timeSec) * 60) || 0;
+            const acc = Math.round((speechCorrect / speechWords.length) * 100) || 0;
 
-            els.statWpm.innerText = wpm;
-            els.statAcc.innerText = `${accuracy}%`;
-            els.statTime.innerText = `${timeTakenSec.toFixed(1)}s`;
-            
-            els.stats.style.display = 'grid';
+            showResults(wpm, acc, "Speech Session");
         }
 
-        // Handle Escape key to exit modes
-        document.addEventListener('keydown', (e) => {
-            if (e.key === "Escape") {
+        // --- RSVP MODE ENGINE ---
+        let rsvpInterval;
+        let rsvpWords = [];
+        let rsvpIndex = 0;
+        let rsvpRunning = false;
+
+        function initRSVPMode() {
+            if(!checkInput()) return;
+            rsvpWords = el.input.value.trim().split(/\s+/);
+            rsvpIndex = 0;
+            rsvpRunning = false;
+            el.rsvpDisplay.innerText = "Press Start";
+            el.rsvpToggle.innerText = "Start Reading";
+            el.rsvpBar.style.width = "0%";
+            el.rsvpMode.classList.add('active');
+        }
+
+        function updateWPM(val) {
+            state.wpm = val;
+            document.getElementById('wpm-val').innerText = val;
+            if(rsvpRunning) {
                 stopRSVP();
-                if(els.coachView.classList.contains('active')) {
-                    // Just return to editor, don't finish session logic
-                    isListening = false;
-                    if (recognition) recognition.stop();
-                    els.coachView.classList.remove('active');
-                }
+                startRSVP();
             }
-        });
+        }
+
+        function toggleRSVP() {
+            if(rsvpRunning) stopRSVP();
+            else startRSVP();
+        }
+
+        function startRSVP() {
+            rsvpRunning = true;
+            el.rsvpToggle.innerText = "Pause";
+            el.rsvpToggle.className = "btn btn-outline"; // Visual change
+            
+            const delay = 60000 / state.wpm;
+
+            rsvpInterval = setInterval(() => {
+                if(rsvpIndex >= rsvpWords.length) {
+                    finishRSVPSession();
+                    return;
+                }
+                el.rsvpDisplay.innerText = rsvpWords[rsvpIndex];
+                
+                // Progress Bar
+                const pct = ((rsvpIndex + 1) / rsvpWords.length) * 100;
+                el.rsvpBar.style.width = `${pct}%`;
+
+                rsvpIndex++;
+            }, delay);
+        }
+
+        function stopRSVP() {
+            rsvpRunning = false;
+            clearInterval(rsvpInterval);
+            el.rsvpToggle.innerText = "Resume";
+            el.rsvpToggle.className = "btn btn-primary";
+        }
+
+        function finishRSVPSession() {
+            stopRSVP();
+            el.rsvpMode.classList.remove('active');
+            // RSVP assumes 100% accuracy if finished
+            showResults(state.wpm, 100, "Speed Reading");
+        }
+
+        // --- RESULTS & UTILS ---
+        
+        function showResults(wpm, acc, type) {
+            el.resWpm.innerText = wpm;
+            el.resAcc.innerText = acc + '%';
+            
+            // Dynamic Message
+            let msg = "Practice makes perfect!";
+            if(wpm > 400 && acc > 80) msg = "You are a reading machine! 🚀";
+            else if(wpm > 200 && acc > 90) msg = "Great consistency and flow. ⭐";
+            else if(acc < 50) msg = "Try slowing down to improve accuracy.";
+            
+            el.resMsg.innerText = msg;
+            
+            // Save to History
+            state.history.push({ date: new Date().toLocaleString(), type, wpm, acc });
+            localStorage.setItem('history', JSON.stringify(state.history));
+            
+            openModal('results-modal');
+        }
+
+        function shareResult() {
+            const text = `I just hit ${el.resWpm.innerText} WPM with ${el.resAcc.innerText} accuracy on SpeechCoach Pro! 🚀`;
+            if(navigator.share) {
+                navigator.share({ title: 'SpeechCoach Stats', text: text });
+            } else {
+                navigator.clipboard.writeText(text);
+                alert("Stats copied to clipboard!");
+            }
+        }
+
+        function exitMode(mode) {
+            isListening = false;
+            if(recognition) recognition.stop();
+            stopRSVP();
+            
+            if(mode === 'coach') el.coachMode.classList.remove('active');
+            if(mode === 'rsvp') el.rsvpMode.classList.remove('active');
+        }
+
+        function openSettings() { openModal('settings-modal'); }
+        
+        function resetData() {
+            if(confirm("Delete all history?")) {
+                localStorage.removeItem('history');
+                state.history = [];
+                alert("Data reset.");
+            }
+        }
+
+        // Modal Logic
+        function openModal(id) { document.getElementById(id).classList.add('open'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+        
+        // Close modal on outside click
+        window.onclick = function(e) {
+            if(e.target.classList.contains('modal-backdrop')) {
+                e.target.classList.remove('open');
+            }
+        }
 
     </script>
 </body>
